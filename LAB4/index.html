@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <link rel="stylesheet" type="text/css" href="main.css">
+</head>
+
+<body>
+    <div class="title">
+        <h1 class="animationHead">
+            인프밍 영화 정보 사이트입니다.
+        </h1>
+    </div>
+    <div class="menu">
+        <span><a href="index.html">메인페이지</a> <a href="login.html">로그인</a> <a href="signup.html">회원가입</a></span>
+    </div>
+    <div class="line"></div>
+    <div class="search">
+        <input type="text" id="searchInput" placeholder="키워드를 입력하세요" />
+        <button id="filterButton">filter results</button>
+    </div>
+
+    <div class="movie">Movies</div>
+    <div class="line"></div>
+    <div class="container">
+        <div id="sortOptions">
+            정렬 기준
+            <label><input type="radio" name="sort" value="ratingAsc"> 평점 오름차순</label>
+            <label><input type="radio" name="sort" value="ratingDesc"> 평점 내림차순</label>
+            <label><input type="radio" name="sort" value="dateAsc"> 개봉일 오름차순</label>
+            <label><input type="radio" name="sort" value="dateDesc"> 개봉일 내림차순</label>
+        </div>
+        <div id="movie-container" class="movie-container">
+        </div>
+
+
+
+    </div>
+
+</body>
+<script>
+    let movies = [];
+    let moviesToShow = [];
+    let currentIndex = 0;
+    const itemsPerLoad = 6;
+
+    function loadMoreMovies() {
+        const container = document.getElementById('movie-container');
+        const endIndex = Math.min(currentIndex + itemsPerLoad, moviesToShow.length);
+
+        for (let i = currentIndex; i < endIndex; i++) {
+            const movie = moviesToShow[i];
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+        <div class="poster-wrapper">
+            <img src="${movie.poster_path}" alt="${movie.title}">
+            <div class="overview">${movie.overview}</div>
+        </div>
+        <div class="card-content">
+            <h3>${movie.title}</h3>
+            <p>${movie.release_date}</p>
+            <p>평점: ${movie.vote_average} / 10</p>
+        </div>
+        `;
+            container.appendChild(card);
+        }
+
+        currentIndex = endIndex;
+    }
+
+    function handleScroll() {
+        const scrollBottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
+        if (scrollBottom && currentIndex < moviesToShow.length) {
+            loadMoreMovies();
+        }
+    }
+
+    function filterAndSortMovies() {
+        const keyword = document.getElementById('searchInput').value.trim().toLowerCase();
+
+        let filtered = movies.filter(movie =>
+            movie.title.toLowerCase().includes(keyword)
+        );
+
+        const selectedSort = document.querySelector('input[name="sort"]:checked')?.value;
+        if (selectedSort) {
+            filtered.sort((a, b) => {
+                switch (selectedSort) {
+                    case 'ratingAsc':
+                        return a.vote_average - b.vote_average;
+                    case 'ratingDesc':
+                        return b.vote_average - a.vote_average;
+                    case 'dateAsc':
+                        return new Date(a.release_date) - new Date(b.release_date);
+                    case 'dateDesc':
+                        return new Date(b.release_date) - new Date(a.release_date);
+                    default:
+                        return 0;
+                }
+            });
+        }
+
+        return filtered;
+    }
+
+    function refreshMovies() {
+        const container = document.getElementById('movie-container');
+        container.innerHTML = '';
+        currentIndex = 0;
+        moviesToShow = filterAndSortMovies();
+        loadMoreMovies();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        fetch('product.json')
+            .then(res => res.json())
+            .then(data => {
+                movies = Array.isArray(data) ? data : [data];
+                moviesToShow = movies;
+                loadMoreMovies();
+                window.addEventListener('scroll', handleScroll);
+            })
+            .catch(err => {
+                console.error('Error fetching data:', err);
+            });
+
+        document.getElementById('filterButton').addEventListener('click', refreshMovies);
+        document.getElementById('sortOptions').addEventListener('change', refreshMovies);
+    });
+</script>
+
+</html>
