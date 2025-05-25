@@ -113,7 +113,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        fetch('product.json')
+        fetch('./LAB4/product.json')
             .then(res => res.json())
             .then(data => {
                 movies = Array.isArray(data) ? data : [data];
